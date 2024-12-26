@@ -12,3 +12,13 @@ services:
     volumes:
       - './src/migrations/:/docker-entrypoint-initdb.d/'
     command: ["postgres", "-c", "log_statement=all"] 
+  api:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: cinema_app
+    ports:
+      - "8082:8082"
+    volumes:
+      - .:/cinema
+    restart: unless-stopped

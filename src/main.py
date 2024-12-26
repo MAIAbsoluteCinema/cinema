@@ -60,6 +60,60 @@ async def add_rating(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to add rating: {str(e)}")
 
+class FilmResponse(BaseModel):
+    title: str
+    genres: str
+    overview: str
+    production_countries: str
+    runtime: int
+    spoken_languages: str
+    vote_average: float
+    vote_count: int
+
+@app.get("/api/v1/film/{film_id}")
+async def get_film(
+    film_id: int = Path(..., title="ID of the film", gt=0)
+):
+    """
+    Get detailed information about a specific film.
+    """
+    query = """
+    SELECT title, genres, overview, production_countries, 
+           runtime, spoken_languages, vote_average, vote_count
+    FROM movies
+    WHERE movieId = %s
+    """
+    
+    try:
+        with psycopg2.connect(**DB_CONFIG) as conn:
+            with conn.cursor() as cur:
+                cur.execute(query, (film_id,))
+                result = cur.fetchone()
+                
+                if not result:
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"Film with id {film_id} not found"
+                    )
+                
+                return FilmResponse(
+                    title=result[0],
+                    genres=result[1],
+                    overview=result[2],
+                    production_countries=result[3],
+                    runtime=result[4],
+                    spoken_languages=result[5],
+                    vote_average=result[6],
+                    vote_count=result[7]
+                )
+                
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to fetch film data: {str(e)}"
+        )
+
+
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8082)
