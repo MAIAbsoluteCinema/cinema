@@ -11,7 +11,10 @@ services:
       POSTGRES_DB: postgresDB
     volumes:
       - './src/migrations/:/docker-entrypoint-initdb.d/'
-    command: ["postgres", "-c", "log_statement=all"] 
+    command: ["postgres", "-c", "log_statement=all"]
+    networks:
+      - app-network
+
   api:
     build: 
       context: .
@@ -22,3 +25,11 @@ services:
     volumes:
       - .:/cinema
     restart: unless-stopped
+    depends_on:
+      - postgres    # Добавляем зависимость
+    networks:
+      - app-network
+
+networks:    # Определяем сеть
+  app-network:
+    driver: bridge
