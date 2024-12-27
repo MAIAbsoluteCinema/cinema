@@ -114,6 +114,48 @@ async def get_film(
         )
 
 
+class FilmListItem(BaseModel):
+    movieId: int
+    title: str
+    vote_average: float
+    vote_count: int
+
+@app.get("/api/v1/films/")
+async def get_films(
+    films: int = Query(..., title="Number of films to return", gt=0)
+):
+    """
+    Get a list of films with basic information.
+    The number of films is specified in the query parameter 'films'.
+    """
+    query = """
+    SELECT movieId, title, vote_average, vote_count
+    FROM movies
+    ORDER BY vote_count DESC
+    LIMIT %s
+    """
+    
+    try:
+        with psycopg2.connect(**DB_CONFIG) as conn:
+            with conn.cursor() as cur:
+                cur.execute(query, (films,))
+                results = cur.fetchall()
+                
+                return [
+                    FilmListItem(
+                        movieId=row[0],
+                        title=row[1],
+                        vote_average=row[2], 
+                        vote_count=row[3]
+                    ) for row in results
+                ]
+                
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to fetch films: {str(e)}"
+        )
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8082)
